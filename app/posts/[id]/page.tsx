@@ -50,7 +50,7 @@ export default function PostPage() {
         <Sidebar />
         <main className="flex-1 flex items-center justify-center">
           <div className="animate-pulse">
-            <div className="w-96 h-96 bg-slate-200 rounded-2xl" />
+            <div className="w-96 h-96 bg-slate-200 dark:bg-slate-700 rounded-2xl" />
           </div>
         </main>
       </div>
@@ -78,7 +78,7 @@ export default function PostPage() {
       <Sidebar />
       <main className="flex-1 min-w-0 overflow-y-auto">
         <div className="max-w-2xl mx-auto px-4 py-8">
-          <article className="bg-card border border-border rounded-2xl overflow-hidden shadow-lg">
+          <article className="bg-card border border-border rounded-2xl overflow-hidden shadow-lg dark:shadow-black/30">
             {/* Author Info */}
             <div className="px-6 pt-6 pb-4 border-b border-border">
               <Link 

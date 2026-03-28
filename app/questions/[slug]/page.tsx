@@ -117,7 +117,7 @@ export default function QuestionDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen">
+      <div className="flex min-h-screen bg-surface text-primary">
         <Sidebar />
         <main className="flex-1 flex items-center justify-center">
           <div className="animate-spin w-8 h-8 border-2 border-violet-600 border-t-transparent rounded-full" />
@@ -128,7 +128,7 @@ export default function QuestionDetailPage() {
 
   if (!question) {
     return (
-      <div className="flex min-h-screen">
+      <div className="flex min-h-screen bg-surface text-primary">
         <Sidebar />
         <main className="flex-1 flex items-center justify-center text-secondary">
           Question not found
@@ -138,7 +138,7 @@ export default function QuestionDetailPage() {
   }
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-surface text-primary">
       <Sidebar />
       <main className="flex-1 min-w-0 overflow-hidden">
         <div className="flex flex-col lg:flex-row h-screen">

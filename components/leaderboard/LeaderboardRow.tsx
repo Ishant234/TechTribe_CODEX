@@ -21,7 +21,7 @@ export default function LeaderboardRow({ user, isHighlighted }: Props) {
     <div
       className={`flex items-center gap-3 sm:gap-4 px-4 py-3 rounded-xl transition-all duration-200 group cursor-pointer ${
         isHighlighted
-          ? 'bg-violet-50 border border-violet-100 hover:bg-violet-100'
+          ? 'bg-violet-50 border border-violet-100 hover:bg-violet-100 dark:bg-violet-950/30 dark:border-violet-900/50 dark:hover:bg-violet-900/40'
           : 'hover:bg-surface border border-transparent'
       }`}
     >
@@ -31,7 +31,7 @@ export default function LeaderboardRow({ user, isHighlighted }: Props) {
       </div>
 
       {/* Avatar */}
-      <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-border group-hover:ring-violet-200 transition-all shadow-sm">
+      <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-border group-hover:ring-violet-200 dark:group-hover:ring-violet-700 transition-all shadow-sm">
         <Image
           src={user.avatar || 'https://picsum.photos/seed/default/100/100'}
           alt={user.name}

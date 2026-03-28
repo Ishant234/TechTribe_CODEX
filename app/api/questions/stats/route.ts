@@ -2,9 +2,15 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUserId } from '@/lib/session'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const userId = await getCurrentUserId()
+    const { searchParams } = new URL(request.url)
+    const targetUserId = searchParams.get('userId')
+    const currentUserId = await getCurrentUserId()
+    
+    // Use target user ID if provided, otherwise fallback to current user
+    const userId = targetUserId || currentUserId
+
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

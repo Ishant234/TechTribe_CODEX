@@ -178,7 +178,7 @@ export default function UserCard({ user }: UserCardProps) {
 
         {/* View Profile Button */}
         <Link
-          href={`/user/${user.id}`}
+          href={`/profile/${user.id}`}
           className="px-4 py-2 rounded-xl bg-violet-50 text-violet-600 text-xs font-bold border border-violet-100 hover:bg-violet-600 hover:text-white hover:border-violet-600 transition-all duration-200 whitespace-nowrap"
         >
           View Profile

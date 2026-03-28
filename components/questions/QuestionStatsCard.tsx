@@ -15,13 +15,14 @@ interface QuestionStats {
   recentSolved: { title: string; slug: string; difficulty: string; solvedAt: string }[]
 }
 
-export default function QuestionStatsCard() {
+export default function QuestionStatsCard({ userId }: { userId?: string }) {
   const [stats, setStats] = useState<QuestionStats | null>(null)
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await fetch('/api/questions/stats')
+        const url = userId ? `/api/questions/stats?userId=${userId}` : '/api/questions/stats'
+        const res = await fetch(url)
         if (res.ok) setStats(await res.json())
       } catch {}
     }

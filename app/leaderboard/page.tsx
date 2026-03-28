@@ -42,11 +42,11 @@ export default function LeaderboardPage() {
 
       <main className="flex-1 flex flex-col h-screen overflow-hidden">
         {/* Header */}
-        <header className="sticky top-0 z-30 bg-card/80 backdrop-blur-xl border-b border-border px-5 py-4 flex items-center justify-between md:pl-5 pl-16">
+        <header className="sticky top-0 z-30 bg-card/80 backdrop-blur-xl border-b border-border px-5 py-4 flex items-center justify-between md:pl-5 pl-16 shadow-sm dark:shadow-black/10">
           <h1 className="text-primary font-bold text-xl tracking-tight">Leaderboard</h1>
           <div className="flex items-center gap-3">
              <div className="hidden sm:flex flex-col items-end">
-                <span className="text-[10px] text-slate-500 uppercase font-bold">Global Rank</span>
+                <span className="text-[10px] text-muted uppercase font-bold">Global Rank</span>
                 <span className="text-xs text-amber-400 font-bold">#1,248</span>
              </div>
              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
@@ -62,7 +62,7 @@ export default function LeaderboardPage() {
             <LeaderboardStatsSection stats={stats} loading={loading} />
 
             {/* Main Leaderboard Card */}
-            <div className="bg-card border border-border rounded-[2rem] p-6 sm:p-10 shadow-xl shadow-black/5 space-y-10">
+            <div className="bg-card border border-border rounded-[2rem] p-6 sm:p-10 shadow-xl shadow-black/5 dark:shadow-black/30 space-y-10">
               <div className="text-center space-y-1">
                 <h2 className="text-3xl font-bold text-primary">Top TechTribers</h2>
                 <p className="text-sm text-secondary">The most active developers in the community.</p>

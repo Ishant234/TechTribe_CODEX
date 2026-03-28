@@ -68,7 +68,7 @@ export default function CardActions({ likes = 0, postId }: CardActionsProps) {
         {/* Share */}
         <button 
           onClick={() => setShareModalOpen(true)}
-          className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-secondary hover:text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-500/10 transition-all duration-200 group ml-auto"
+          className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-secondary hover:text-sky-600 hover:bg-sky-50 dark:hover:text-sky-400 dark:hover:bg-sky-500/10 transition-all duration-200 group ml-auto"
         >
           <svg
             className="w-4 h-4 fill-none group-hover:scale-110 transition-transform duration-200"
@@ -93,7 +93,7 @@ export default function CardActions({ likes = 0, postId }: CardActionsProps) {
           onClick={() => setShareModalOpen(false)}
         >
           <div 
-            className="bg-card rounded-2xl p-6 w-full max-w-md shadow-2xl"
+            className="bg-card rounded-2xl p-6 w-full max-w-md shadow-2xl dark:shadow-black/50"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
@@ -115,14 +115,14 @@ export default function CardActions({ likes = 0, postId }: CardActionsProps) {
                 type="text"
                 value={shareLink}
                 readOnly
-                className="flex-1 px-4 py-3 rounded-xl border border-border bg-input-bg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-sky-500"
+                className="flex-1 px-4 py-3 rounded-xl border border-border bg-input-bg text-sm text-primary focus:outline-none focus:ring-2 focus:ring-sky-500 dark:focus:ring-sky-400"
               />
               <button
                 onClick={handleCopyLink}
                 className={`px-4 py-3 rounded-xl font-semibold text-sm transition-all duration-200 whitespace-nowrap ${
                   copied
                     ? 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400'
-                    : 'bg-sky-600 text-white hover:bg-sky-700'
+                    : 'bg-sky-600 text-white hover:bg-sky-700 dark:bg-sky-700 dark:hover:bg-sky-600'
                 }`}
               >
                 {copied ? 'Copied!' : 'Copy'}
