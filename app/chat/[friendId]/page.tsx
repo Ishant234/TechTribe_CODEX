@@ -6,6 +6,14 @@ import Link from 'next/link'
 import Editor from '@monaco-editor/react'
 import { ChatMessageType, ConversationType, CodeSessionType, CodeRunResult } from '@/types/chat'
 
+const STARTER_TEMPLATES: Record<string, string> = {
+  cpp: '#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    \n    return 0;\n}',
+  python: 'def main():\n    pass\n\nif __name__ == "__main__":\n    main()',
+  javascript: 'function main() {\n    \n}\n\nmain();',
+  typescript: 'function main() {\n    \n}\n\nmain();',
+  java: 'public class Main {\n    public static void main(String[] args) {\n        \n    }\n}'
+};
+
 export default function ChatPage() {
   const router = useRouter()
   const params = useParams()
@@ -19,7 +27,7 @@ export default function ChatPage() {
   const [error, setError] = useState('')
 
   // Code Editor State
-  const [code, setCode] = useState('// Write your code here...')
+  const [code, setCode] = useState('')
   const [language, setLanguage] = useState('javascript')
   const [isSavingCode, setIsSavingCode] = useState(false)
   const [isRunningCode, setIsRunningCode] = useState(false)
@@ -38,9 +46,20 @@ export default function ChatPage() {
         const data = await res.json()
         setConversation(data)
         setMessages(data.messages || [])
-        if (data.codeSession) {
+        
+        let initialLang = 'javascript'
+        if (data.codeSession && data.codeSession.language) {
+          initialLang = data.codeSession.language
+        }
+        setLanguage(initialLang)
+
+        const localDraft = localStorage.getItem(`editor_draft_${friendId}_${initialLang}`)
+        if (localDraft) {
+          setCode(localDraft)
+        } else if (data.codeSession && data.codeSession.code) {
           setCode(data.codeSession.code)
-          setLanguage(data.codeSession.language || 'javascript')
+        } else {
+          setCode(STARTER_TEMPLATES[initialLang] || '')
         }
       } catch (err: any) {
         setError(err.message)
@@ -123,6 +142,10 @@ export default function ChatPage() {
 
     const timer = setTimeout(async () => {
       setIsSavingCode(true)
+      
+      // Save locally immediately
+      localStorage.setItem(`editor_draft_${friendId}_${language}`, code)
+
       try {
         await fetch('/api/chat/code', {
           method: 'POST',
@@ -170,6 +193,31 @@ export default function ChatPage() {
     sendMessage('CODE', code)
   }
 
+  const handleLanguageChange = (newLang: string) => {
+    setLanguage(newLang)
+    const localDraft = localStorage.getItem(`editor_draft_${friendId}_${newLang}`)
+    if (localDraft) {
+      setCode(localDraft)
+    } else {
+      setCode(STARTER_TEMPLATES[newLang] || '')
+    }
+  }
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(code)
+  }
+
+  const handleClear = () => {
+    setCode('')
+  }
+
+  const handleReset = () => {
+    if (window.confirm("Are you sure you want to reset to the starter template?")) {
+      setCode(STARTER_TEMPLATES[language] || '')
+      localStorage.removeItem(`editor_draft_${friendId}_${language}`)
+    }
+  }
+
   if (loading) return (
     <div className="flex h-screen items-center justify-center bg-surface">
       <div className="w-12 h-12 rounded-full border-4 border-violet-200 border-t-violet-600 animate-spin"></div>
@@ -185,10 +233,10 @@ export default function ChatPage() {
   const friendName = conversation?.participants.find(p => p.user.id === friendId)?.user.name || 'Friend'
 
   return (
-    <div className="flex h-screen bg-surface overflow-hidden font-sans">
+    <div className="flex flex-col lg:flex-row h-screen bg-surface overflow-hidden font-sans">
       
-      {/* LEFT PANEL: Chat (30%) */}
-      <div className="w-[30%] min-w-[320px] max-w-[400px] border-r border-border bg-card flex flex-col shadow-sm z-10 flex-shrink-0">
+      {/* LEFT PANEL: Chat */}
+      <div className="w-full lg:w-[30%] lg:min-w-[320px] lg:max-w-[400px] h-1/2 lg:h-full border-b lg:border-b-0 lg:border-r border-border bg-card flex flex-col shadow-sm z-10 flex-shrink-0">
         
         <div className="p-4 border-b border-border flex items-center justify-between bg-card shadow-sm z-10">
           <div className="flex items-center gap-3">
@@ -264,8 +312,8 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {/* RIGHT PANEL: Editor + Output (70%) */}
-      <div className="flex-1 flex flex-col min-w-0">
+      {/* RIGHT PANEL: Editor + Output */}
+      <div className="flex-1 flex flex-col min-w-0 h-1/2 lg:h-full">
         
         {/* TOP RIGHT: Editor */}
         <div className="flex-[5] flex flex-col bg-[#1e1e1e] border-b border-gray-900 shadow-2xl z-20 overflow-hidden relative">
@@ -279,7 +327,7 @@ export default function ChatPage() {
               <div className="h-4 w-px bg-gray-700"></div>
               <select 
                 value={language}
-                onChange={(e) => setLanguage(e.target.value)}
+                onChange={(e) => handleLanguageChange(e.target.value)}
                 className="bg-[#2d2d2d] text-gray-200 text-xs font-medium rounded-lg px-3 py-1.5 outline-none border border-gray-700 focus:border-violet-500 transition-colors cursor-pointer appearance-none pr-8 relative"
                 style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%239ca3af\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")', backgroundPosition: 'right 0.5rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.2em 1.2em' }}
               >
@@ -291,7 +339,23 @@ export default function ChatPage() {
               </select>
             </div>
             
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2 items-center justify-end">
+              <button onClick={handleReset} title="Reset to Template" className="p-1.5 text-gray-400 hover:text-white transition-colors">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+              <button onClick={handleClear} title="Clear Code" className="p-1.5 text-gray-400 hover:text-white transition-colors">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+              <button onClick={handleCopy} title="Copy Code" className="p-1.5 text-gray-400 hover:text-white transition-colors mr-2 lg:mr-4 border-r border-gray-700 pr-3 lg:pr-5">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+              </button>
+
               <button 
                 onClick={handleShareCode}
                 className="px-4 py-1.5 bg-[#252525] hover:bg-[#353535] text-muted text-xs font-bold rounded-lg border border-gray-700 transition-colors flex items-center gap-2"
