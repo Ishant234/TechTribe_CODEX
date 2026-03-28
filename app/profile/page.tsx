@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Sidebar from '@/components/Sidebar'
 import ProfileCard from '@/components/profile/ProfileCard'
 import PostGrid from '@/components/posts/PostGrid'
+import QuestionStatsCard from '@/components/questions/QuestionStatsCard'
 
 export default function ProfilePage() {
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -82,6 +83,9 @@ export default function ProfilePage() {
         <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
           {/* Top – Profile Summary Card */}
           <ProfileCard />
+
+          {/* Coding Progress */}
+          <QuestionStatsCard />
 
           {/* Bottom – Posts Grid */}
           <div className="bg-card border border-border rounded-2xl p-6">

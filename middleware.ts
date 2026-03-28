@@ -15,5 +15,7 @@ export const config = {
     '/search/:path*',
     '/chat/:path*',
     '/friends/:path*',
+    '/questions/:path*',
+    '/submissions/:path*',
   ],
 }

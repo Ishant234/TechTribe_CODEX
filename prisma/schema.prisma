@@ -36,6 +36,8 @@ model User {
   editedCodeSessions ChatCodeSession[]
   sentFriendRequests FriendRequest[] @relation("sentFriendRequests")
   receivedFriendRequests FriendRequest[] @relation("receivedFriendRequests")
+  submissions        Submission[]
+  questionStats      UserQuestionStats[]
 }
 
 // ─── PROFILE ────────────────────────────────────────────
@@ -358,3 +360,76 @@ model ChatCodeSession {
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   lastEditedBy   User         @relation(fields: [lastEditedById], references: [id], onDelete: Cascade)
 }
+
+// ─── QUESTION (Online Judge) ────────────────────────────
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum Verdict {
+  ACCEPTED
+  WRONG_ANSWER
+  COMPILATION_ERROR
+  RUNTIME_ERROR
+  TIME_LIMIT_EXCEEDED
+}
+
+model Question {
+  id                String     @id @default(cuid())
+  title             String
+  slug              String     @unique
+  difficulty        Difficulty
+  tags              String[]   @default([])
+  statement         String     @db.Text
+  inputFormat       String     @db.Text
+  outputFormat      String     @db.Text
+  constraints       String     @db.Text
+  explanation       String?    @db.Text
+  visibleSamples    Json       // [{input, output, explanation?}]
+  hiddenTestCases   Json       // [{input, expectedOutput}]
+  starterCode       Json       // {cpp, python, javascript}
+  referenceSolution Json       // {cpp, python, javascript}
+  timeLimit         Int        @default(2000) // ms
+  memoryLimit       Int        @default(256)  // MB
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  submissions Submission[]
+  stats       UserQuestionStats[]
+}
+
+model Submission {
+  id              String   @id @default(cuid())
+  userId          String
+  questionId      String
+  language        String
+  code            String   @db.Text
+  verdict         Verdict
+  passedTestCases Int      @default(0)
+  totalTestCases  Int      @default(0)
+  runtime         Int?     // ms
+  memory          Int?     // KB
+  compileError    String?  @db.Text
+  submittedAt     DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model UserQuestionStats {
+  id              String   @id @default(cuid())
+  userId          String
+  questionId      String
+  solved          Boolean  @default(false)
+  attempts        Int      @default(0)
+  bestVerdict     Verdict?
+  lastSubmittedAt DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId])
+}
+  
