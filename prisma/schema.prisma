@@ -38,6 +38,10 @@ model User {
   receivedFriendRequests FriendRequest[] @relation("receivedFriendRequests")
   submissions        Submission[]
   questionStats      UserQuestionStats[]
+
+  verifiedCodeforces Boolean @default(false)
+  verifiedCodechef   Boolean @default(false)
+  verifiedLeetcode   Boolean @default(false)
 }
 
 // ─── PROFILE ────────────────────────────────────────────

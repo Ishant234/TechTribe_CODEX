@@ -57,10 +57,13 @@ export async function POST(request: NextRequest) {
 
     if (platform === 'CODEFORCES') {
       await prisma.codeforcesStat.upsert({ where: { userId }, update: data, create: { userId, ...data } })
+      await prisma.user.update({ where: { id: userId }, data: { verifiedCodeforces: false } })
     } else if (platform === 'LEETCODE') {
       await prisma.leetcodeStat.upsert({ where: { userId }, update: data, create: { userId, ...data } })
+      await prisma.user.update({ where: { id: userId }, data: { verifiedLeetcode: false } })
     } else if (platform === 'CODECHEF') {
       await prisma.codechefStat.upsert({ where: { userId }, update: data, create: { userId, ...data } })
+      await prisma.user.update({ where: { id: userId }, data: { verifiedCodechef: false } })
     }
 
     // Update user total points

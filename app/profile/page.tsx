@@ -6,6 +6,7 @@ import Sidebar from '@/components/Sidebar'
 import ProfileCard from '@/components/profile/ProfileCard'
 import PostGrid from '@/components/posts/PostGrid'
 import QuestionStatsCard from '@/components/questions/QuestionStatsCard'
+import VerificationBadges from '@/components/profile/VerificationBadges'
 
 export default function ProfilePage() {
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -86,6 +87,9 @@ export default function ProfilePage() {
 
           {/* Coding Progress */}
           <QuestionStatsCard />
+
+          {/* Platform Verification */}
+          <VerificationBadges />
 
           {/* Bottom – Posts Grid */}
           <div className="bg-card border border-border rounded-2xl p-6">

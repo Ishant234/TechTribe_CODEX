@@ -5,6 +5,7 @@ import Sidebar from '@/components/Sidebar'
 import ProfileCard from '@/components/profile/ProfileCard'
 import PostGrid from '@/components/posts/PostGrid'
 import QuestionStatsCard from '@/components/questions/QuestionStatsCard'
+import VerificationBadges from '@/components/profile/VerificationBadges'
 
 interface ProfilePageProps {
   params: Promise<{ id: string }>
@@ -25,6 +26,9 @@ export default function UserProfilePage({ params }: ProfilePageProps) {
 
           {/* Coding Progress */}
           <QuestionStatsCard userId={id} />
+
+          {/* Platform Verification */}
+          <VerificationBadges userId={id} />
 
           {/* Bottom – Posts Grid */}
           <div className="bg-card border border-border rounded-2xl p-6">
