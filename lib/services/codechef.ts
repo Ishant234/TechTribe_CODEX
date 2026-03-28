@@ -25,7 +25,7 @@ export async function fetchCodechefStats(handle: string) {
     await page.waitForSelector('.rating-number', { timeout: 15000 })
 
     // Extract current rating
-    const ratingText = await page.$eval('.rating-number', (el) =>
+    const ratingText = await page.$eval('.rating-number', (el: Element) =>
       (el as HTMLElement).innerText.trim()
     )
     const currentRating = toNum(ratingText)
@@ -34,7 +34,7 @@ export async function fetchCodechefStats(handle: string) {
     // Extract max rating from the small tag in .rating-header
     let maxRating = 0
     try {
-      const maxRatingText = await page.$eval('.rating-header small', (el) =>
+      const maxRatingText = await page.$eval('.rating-header small', (el: Element) =>
         (el as HTMLElement).innerText.trim()
       )
       maxRating = toNum(maxRatingText)
@@ -53,7 +53,7 @@ export async function fetchCodechefStats(handle: string) {
     try {
       const h3Texts = await page.$$eval(
         '.rating-data-section.problems-solved h3',
-        (els) => els.map((el) => (el as HTMLElement).innerText.trim())
+        (els: Element[]) => els.map((el: Element) => (el as HTMLElement).innerText.trim())
       )
       console.log(`[CodeChef] Found h3 texts:`, h3Texts)
 
@@ -75,7 +75,7 @@ export async function fetchCodechefStats(handle: string) {
       try {
         const contestText = await page.$eval(
           '.contest-participated-count',
-          (el) => (el as HTMLElement).innerText.trim()
+          (el: Element) => (el as HTMLElement).innerText.trim()
         )
         contestsParticipated = toNum(contestText)
         console.log(`[CodeChef] Contests from sidebar: ${contestsParticipated}`)
