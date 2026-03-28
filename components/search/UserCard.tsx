@@ -41,12 +41,15 @@ export default function UserCard({ user }: UserCardProps) {
     try {
       let body: any = {}
       
-      // Determine if we are initiating a new request or acting on an existing one
+      // Determine the correct body based on the endpoint
       if (endpoint === '/api/friends/request') {
         // For sending initial friend request
         body = { receiverId: user.id }
+      } else if (endpoint === '/api/friends/remove') {
+        // Remove endpoint expects friendId, not requestId
+        body = { friendId: user.id }
       } else {
-        // For cancel, accept, reject, remove operations
+        // For cancel, accept, reject operations
         body = { requestId }
       }
       
