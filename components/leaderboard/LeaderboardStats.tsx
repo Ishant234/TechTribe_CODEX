@@ -16,7 +16,7 @@ interface StatCardProps {
 
 function StatCard({ label, value, icon, color }: StatCardProps) {
   return (
-    <div className={`flex items-center gap-4 p-4 rounded-2xl border transition-all duration-200 hover:scale-[1.03] shadow-sm dark:shadow-none ${color} dark:bg-slate-900/50 dark:border-slate-700`}>
+    <div className={`flex items-center gap-4 p-4 rounded-2xl border transition-all duration-200 hover:scale-[1.03] shadow-sm dark:shadow-none ${color}`}>
       <div className="w-11 h-11 rounded-xl bg-card flex items-center justify-center flex-shrink-0 shadow-sm">
         {icon}
       </div>

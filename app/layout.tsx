@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import NextAuthProvider from '@/components/providers/NextAuthProvider'
 import ThemeProvider from '@/components/providers/ThemeProvider'
+import ErrorBoundary from '@/components/ErrorBoundary'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -39,7 +40,9 @@ export default function RootLayout({
       <body className="bg-surface antialiased transition-colors duration-300">
         <NextAuthProvider>
           <ThemeProvider>
-            {children}
+            <ErrorBoundary>
+              {children}
+            </ErrorBoundary>
           </ThemeProvider>
         </NextAuthProvider>
       </body>

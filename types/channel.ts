@@ -5,8 +5,3 @@ export interface Channel {
   members?: number
   categoryId: string
 }
-
-export interface CreateChannelInput {
-  name: string
-  logo?: string
-}

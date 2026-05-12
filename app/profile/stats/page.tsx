@@ -53,7 +53,7 @@ export default function CodingStatsPage() {
   }))
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-slate-50 to-slate-100 text-primary p-4 md:p-8 overflow-x-hidden">
+    <div className="min-h-screen bg-surface text-primary p-4 md:p-8 overflow-x-hidden">
       {/* Back Link */}
       <Link 
         href="/profile"
@@ -68,7 +68,7 @@ export default function CodingStatsPage() {
       <div className="max-w-6xl mx-auto pt-16 pb-12">
         {/* Title */}
         <div className="text-center mb-16 relative">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-24 bg-violet-400/10 blur-[100px] pointer-events-none" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-24 bg-violet-500/10 blur-[100px] pointer-events-none" />
           <h1 className="text-5xl md:text-7xl font-black italic tracking-tighter text-primary mb-4 animate-in slide-in-from-top duration-700">
             CODER&apos;S PROFILE
           </h1>
@@ -90,7 +90,7 @@ export default function CodingStatsPage() {
           {/* Center Chart Area */}
           <div className="relative">
             {/* Decorative elements */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[120%] h-[120%] bg-violet-600/5 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[120%] h-[120%] bg-violet-600/5 dark:bg-violet-600/10 rounded-full blur-3xl pointer-events-none" />
             
             <div className="h-[400px] w-full relative z-10">
               <ResponsiveContainer width="100%" height="100%">
@@ -115,12 +115,12 @@ export default function CodingStatsPage() {
                   </Pie>
                   <Tooltip 
                     contentStyle={{ 
-                      backgroundColor: '#ffffff', 
-                      borderColor: '#e5e7eb',
+                      backgroundColor: 'var(--color-card)', 
+                      borderColor: 'var(--color-border)',
                       borderRadius: '12px',
                       fontSize: '12px',
                       fontWeight: 'bold',
-                      color: '#111827'
+                      color: 'var(--color-primary)'
                     }}
                   />
                   <Legend 
@@ -190,8 +190,8 @@ function StatDetailCard({ platform, color, align }: { platform: PlatformStats; c
   return (
     <div className={`p-6 rounded-[24px] bg-card/80 backdrop-blur-sm border border-border relative group hover:border-border hover:shadow-md transition-all duration-500 ${align === 'right' ? 'text-right' : align === 'left' ? 'text-left' : 'text-center'}`}>
       <div 
-        className="absolute inset-0 bg-gradient-to-br from-white to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-[24px]" 
-        style={{ '--tw-gradient-from': `${color}05` } as React.CSSProperties}
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity rounded-[24px]" 
+        style={{ background: `linear-gradient(to bottom right, ${color}08, transparent)` } as React.CSSProperties}
       />
       
       <div className={`flex items-center gap-3 mb-4 ${align === 'right' ? 'flex-row-reverse' : align === 'left' ? 'flex-row' : 'justify-center'}`}>

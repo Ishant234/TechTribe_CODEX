@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUserId } from '@/lib/session'
 
-export const maxDuration = 150 // Allow up to 150 seconds for this route
+export const maxDuration = 600 // Allow up to 600 seconds for this route
 
 export async function POST() {
   try {
@@ -18,7 +18,7 @@ export async function POST() {
 
     const handle = cfStat.handle
     const endpointHitTime = Math.floor(Date.now() / 1000)
-    const timeoutDuration = 120 * 1000
+    const timeoutDuration = 600 * 1000
     const pollInterval = 5 * 1000
     const startTime = Date.now()
 
@@ -91,7 +91,7 @@ export async function POST() {
 
     return NextResponse.json({
       success: false,
-      message: 'No valid submission found within 2 minutes',
+      message: 'No valid submission found within 10 minutes',
     })
   } catch (error) {
     console.error('CF verify error:', error)

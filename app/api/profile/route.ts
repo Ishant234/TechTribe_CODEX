@@ -2,12 +2,22 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUserId } from '@/lib/session'
 import { updateProfileSchema } from '@/lib/validators/profile'
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function GET() {
   try {
     const userId = await getCurrentUserId()
     if (!userId) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Rate limit: 20 reads per minute
+    const rl = rateLimit(`profile-get:${userId}`, { limit: 20, windowSeconds: 60 })
+    if (!rl.success) {
+      return NextResponse.json(
+        { message: 'Too many requests. Please slow down.' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } }
+      )
     }
 
     const user = await prisma.user.findUnique({
@@ -33,6 +43,7 @@ export async function GET() {
       avatar: user.profile?.avatarUrl || `https://picsum.photos/seed/${user.id}/200/200`,
       bio: user.profile?.bio || '',
       joinedDate: user.createdAt.toISOString().split('T')[0],
+      points: user.points,
       headline: user.profile?.headline,
       college: user.profile?.college,
       company: user.profile?.company,
@@ -57,7 +68,22 @@ export async function PUT(request: Request) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await request.json()
+    // Rate limit: 10 updates per minute
+    const rl = rateLimit(`profile-put:${userId}`, { limit: 10, windowSeconds: 60 })
+    if (!rl.success) {
+      return NextResponse.json(
+        { message: 'Too many updates. Please wait a moment.' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } }
+      )
+    }
+
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json({ message: 'Invalid request body' }, { status: 400 })
+    }
+
     const validation = updateProfileSchema.safeParse(body)
 
     if (!validation.success) {
@@ -67,10 +93,20 @@ export async function PUT(request: Request) {
       )
     }
 
+    const { name, ...profileData } = validation.data
+
+    // Update user name if provided
+    if (name) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { name },
+      })
+    }
+
     const profile = await prisma.profile.upsert({
       where: { userId },
-      update: validation.data,
-      create: { userId, ...validation.data },
+      update: profileData,
+      create: { userId, ...profileData },
     })
 
     return NextResponse.json(profile)

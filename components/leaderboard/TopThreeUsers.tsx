@@ -9,7 +9,7 @@ interface Props {
 }
 
 const rankConfig = [
-    { order: 1, size: 'w-16 h-16', ring: 'ring-border dark:ring-slate-600', badge: 'bg-skeleton text-primary dark:bg-slate-700 dark:text-slate-100', label: '2nd', glow: 'shadow-black/5 dark:shadow-none' },
+    { order: 1, size: 'w-16 h-16', ring: 'ring-border', badge: 'bg-skeleton text-primary', label: '2nd', glow: 'shadow-black/5 dark:shadow-none' },
     { order: 0, size: 'w-20 h-20', ring: 'ring-amber-400/30 dark:ring-amber-600/40', badge: 'bg-amber-400 text-white dark:bg-amber-600 dark:text-white', label: '1st', glow: 'shadow-amber-400/20 dark:shadow-amber-600/10' },
     { order: 2, size: 'w-16 h-16', ring: 'ring-amber-700/20 dark:ring-amber-700/40', badge: 'bg-amber-700 text-white dark:bg-amber-800 dark:text-white', label: '3rd', glow: 'shadow-amber-700/10 dark:shadow-amber-800/5' },
   ]

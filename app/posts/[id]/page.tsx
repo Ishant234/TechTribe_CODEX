@@ -50,7 +50,7 @@ export default function PostPage() {
         <Sidebar />
         <main className="flex-1 flex items-center justify-center">
           <div className="animate-pulse">
-            <div className="w-96 h-96 bg-slate-200 dark:bg-slate-700 rounded-2xl" />
+            <div className="w-96 h-96 bg-skeleton rounded-2xl" />
           </div>
         </main>
       </div>

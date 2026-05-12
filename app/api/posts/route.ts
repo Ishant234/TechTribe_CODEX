@@ -3,12 +3,22 @@ import { prisma } from '@/lib/prisma'
 import { getCurrentUserId } from '@/lib/session'
 import { createPostSchema } from '@/lib/validators/post'
 import { saveUploadedFile } from '@/lib/upload'
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
   try {
     const userId = await getCurrentUserId()
     if (!userId) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Rate limit: 10 posts per minute
+    const rl = rateLimit(`post-create:${userId}`, { limit: 10, windowSeconds: 60 })
+    if (!rl.success) {
+      return NextResponse.json(
+        { message: 'Too many posts. Please wait before posting again.' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } }
+      )
     }
 
     const formData = await request.formData()
@@ -21,9 +31,13 @@ export async function POST(request: NextRequest) {
 
     let imageUrl: string | undefined
 
-    // Save image to local filesystem instead of Base64
-    if (imageFile) {
-      imageUrl = await saveUploadedFile(imageFile)
+    // Save image with validation (type + size checks in saveUploadedFile)
+    if (imageFile && imageFile.size > 0) {
+      try {
+        imageUrl = await saveUploadedFile(imageFile)
+      } catch (uploadError: any) {
+        return NextResponse.json({ message: uploadError.message }, { status: 400 })
+      }
     }
 
     const validation = createPostSchema.safeParse({

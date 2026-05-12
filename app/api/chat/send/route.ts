@@ -1,12 +1,22 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUserId } from '@/lib/session'
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: Request) {
   try {
     const userId = await getCurrentUserId()
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Rate limit: 30 messages per minute
+    const rl = rateLimit(`chat-send:${userId}`, { limit: 30, windowSeconds: 60 })
+    if (!rl.success) {
+      return NextResponse.json(
+        { error: 'You\'re sending messages too quickly. Please slow down.' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } }
+      )
     }
 
     const body = await request.json()

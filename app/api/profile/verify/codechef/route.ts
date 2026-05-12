@@ -1,56 +1,55 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUserId } from '@/lib/session'
-import puppeteer from 'puppeteer'
+import * as cheerio from 'cheerio'
 
-export const maxDuration = 150
+export const maxDuration = 600
 
-// Scrape recent submissions from a CodeChef profile
+// Scrape recent submissions from a CodeChef profile using fetch + cheerio
 async function scrapeSubmissions(cc_username: string): Promise<Array<{ problemCode: string; verdict: string; language: string; resultText: string }>> {
-  const browser = await puppeteer.launch({
-    headless: true,
-    executablePath: '/usr/bin/google-chrome',
+  const response = await fetch(`https://www.codechef.com/recent/user?user_handle=${cc_username}`, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Accept': 'application/json',
+    },
+    signal: AbortSignal.timeout(15000),
   })
 
-  try {
-    const page = await browser.newPage()
-    await page.goto(`https://www.codechef.com/users/${cc_username}`, {
-      waitUntil: 'networkidle2',
-      timeout: 30000,
-    })
-
-    const submissions = await page.evaluate(() => {
-      const rows = Array.from(document.querySelectorAll('table tbody tr'))
-      return rows.slice(0, 10).map(row => {
-        const cells = row.querySelectorAll('td')
-        if (cells.length < 3) return null
-
-        const problemCode = cells[1]?.innerText?.trim() || ''
-        const resultText = cells[2]?.innerText?.trim() || ''
-        const lang = cells[3]?.innerText?.trim() || ''
-
-        let verdict = 'NOT_ACCEPTED'
-        if (resultText.includes('(100)') || resultText.includes('100') || resultText.toLowerCase().includes('accepted')) {
-          verdict = 'AC'
-        } else if (resultText.includes('Wrong') || resultText.includes('WA')) {
-          verdict = 'WA'
-        } else if (resultText.includes('Time') || resultText.includes('TLE')) {
-          verdict = 'TLE'
-        }
-
-        return {
-          problemCode,
-          verdict,
-          language: lang,
-          resultText,
-        }
-      }).filter(sub => sub && sub.problemCode)
-    })
-
-    return (submissions || []).filter(Boolean) as Array<{ problemCode: string; verdict: string; language: string; resultText: string }>
-  } finally {
-    await browser.close()
+  if (!response.ok) {
+    console.error(`[CC Verify] HTTP ${response.status} for ${cc_username}`)
+    return []
   }
+
+  const data = await response.json()
+  if (!data || !data.content) return []
+  const $ = cheerio.load(data.content)
+
+  const submissions: Array<{ problemCode: string; verdict: string; language: string; resultText: string }> = []
+
+  $('table tbody tr').slice(0, 10).each((_: number, row: any) => {
+    const cells = $(row).find('td')
+    if (cells.length < 3) return
+
+    const problemCode = $(cells[1]).text().trim()
+    const resultTitle = $(cells[2]).find('span').attr('title') || ''
+    const resultText = resultTitle || $(cells[2]).text().trim()
+    const lang = cells.length > 3 ? $(cells[3]).text().trim() : ''
+
+    if (!problemCode) return
+
+    let verdict = 'NOT_ACCEPTED'
+    if (resultText.includes('(100)') || resultText.includes('100') || resultText.toLowerCase().includes('accepted')) {
+      verdict = 'AC'
+    } else if (resultText.toLowerCase().includes('wrong') || resultText.includes('WA')) {
+      verdict = 'WA'
+    } else if (resultText.toLowerCase().includes('time') || resultText.includes('TLE')) {
+      verdict = 'TLE'
+    }
+
+    submissions.push({ problemCode, verdict, language: lang, resultText })
+  })
+
+  return submissions
 }
 
 export async function POST() {
@@ -68,7 +67,7 @@ export async function POST() {
     const cc_username = ccStat.handle
     console.log('Checking CodeChef submissions for:', cc_username)
 
-    const timeoutDuration = 120 * 1000
+    const timeoutDuration = 600 * 1000
     const pollInterval = 5 * 1000
     const startTime = Date.now()
 
@@ -78,7 +77,6 @@ export async function POST() {
     }
 
     // Step 1: Capture BASELINE submissions before polling starts
-    // This is the key fix — we record what already exists so we don't count old submissions
     let baselineCount = 0
     try {
       const baselineSubs = await scrapeSubmissions(cc_username)
@@ -144,7 +142,7 @@ export async function POST() {
 
     return NextResponse.json({
       success: false,
-      message: 'No valid submission found within 2 minutes',
+      message: 'No valid submission found within 10 minutes',
     })
   } catch (err) {
     console.error('Verify CodeChef submission error:', err)

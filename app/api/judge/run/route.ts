@@ -1,12 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUserId } from '@/lib/session'
 import { compileAndRun } from '@/lib/services/judgeService'
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(req: NextRequest) {
   try {
     const userId = await getCurrentUserId()
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Rate limit: 10 code executions per minute
+    const rl = rateLimit(`judge-run:${userId}`, { limit: 10, windowSeconds: 60 })
+    if (!rl.success) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please wait before running code again.' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } }
+      )
     }
 
     const body = await req.json()

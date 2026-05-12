@@ -4,7 +4,7 @@
  * - Removes trailing empty lines
  * - Compares line-by-line
  */
-export function normalizeOutput(raw: string): string {
+function normalizeOutput(raw: string): string {
   return raw
     .replace(/\r\n/g, '\n')        // normalize CRLF
     .split('\n')

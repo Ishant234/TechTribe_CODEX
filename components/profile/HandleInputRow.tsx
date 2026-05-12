@@ -113,7 +113,7 @@ export default function HandleInputRow({
                       strokeWidth="3"
                       strokeLinecap="round"
                       cx="18" cy="18" r="15.5"
-                      strokeDasharray={`${(verifyTimeLeft / 120) * 97.5} 97.5`}
+                      strokeDasharray={`${(verifyTimeLeft / 600) * 97.5} 97.5`}
                     />
                   </svg>
                 </div>
@@ -122,7 +122,9 @@ export default function HandleInputRow({
             )}
           </div>
           <p className="text-xs text-secondary">
-            Submit a solution to the problem below. The system is watching for your submission.
+            {platform === 'CODEFORCES'
+              ? 'Submit a solution that results in Time Limit Exceeded (TLE) to the problem below. The system is watching for your submission.'
+              : 'Submit a correct solution (Accepted) to the problem below. The system is watching for your submission.'}
           </p>
           <a
             href={verifyLink}

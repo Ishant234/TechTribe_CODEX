@@ -5,4 +5,5 @@ export interface Profile {
   username?: string
   bio?: string
   joinedDate?: string
+  points?: number
 }

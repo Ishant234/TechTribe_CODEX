@@ -65,11 +65,11 @@ export const authOptions: NextAuthOptions = {
             data: {
               name: user.name || profile.name || 'User',
               email: user.email,
-              password: '', // OAuth users don't have passwords
+              password: null, // OAuth users don't have passwords
               profile: {
                 create: {
                   bio: '',
-                  avatarUrl: user.image || `https://picsum.photos/seed/${Date.now()}/200/200`,
+                  avatarUrl: user.image || `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(user.name || 'User')}`,
                 },
               },
             },

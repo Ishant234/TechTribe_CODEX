@@ -3,12 +3,22 @@ import { prisma } from '@/lib/prisma'
 import { getCurrentUserId } from '@/lib/session'
 import { compileAndRun } from '@/lib/services/judgeService'
 import { compareOutput } from '@/lib/services/compareOutput'
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(req: NextRequest) {
   try {
     const userId = await getCurrentUserId()
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Rate limit: 10 submissions per minute
+    const rl = rateLimit(`judge-submit:${userId}`, { limit: 10, windowSeconds: 60 })
+    if (!rl.success) {
+      return NextResponse.json(
+        { error: 'Too many submissions. Please wait before submitting again.' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } }
+      )
     }
 
     const body = await req.json()
@@ -82,6 +92,7 @@ export async function POST(req: NextRequest) {
     let passedTestCases = 0
     let verdict: 'ACCEPTED' | 'WRONG_ANSWER' | 'RUNTIME_ERROR' | 'TIME_LIMIT_EXCEEDED' = 'ACCEPTED'
     let totalRuntime = 0
+    let failedTestCaseInfo: { testCase: number; input: string; expectedOutput: string; actualOutput: string; stderr?: string } | null = null
 
     for (let i = 0; i < testCases.length; i++) {
       const tc = testCases[i]
@@ -90,11 +101,24 @@ export async function POST(req: NextRequest) {
 
       if (result.timedOut) {
         verdict = 'TIME_LIMIT_EXCEEDED'
+        failedTestCaseInfo = {
+          testCase: i + 1,
+          input: tc.input,
+          expectedOutput: tc.expectedOutput,
+          actualOutput: '(Time Limit Exceeded)',
+        }
         break
       }
 
       if (result.exitCode !== 0) {
         verdict = 'RUNTIME_ERROR'
+        failedTestCaseInfo = {
+          testCase: i + 1,
+          input: tc.input,
+          expectedOutput: tc.expectedOutput,
+          actualOutput: result.stdout || '',
+          stderr: result.stderr || '',
+        }
         break
       }
 
@@ -102,9 +126,18 @@ export async function POST(req: NextRequest) {
         passedTestCases++
       } else {
         verdict = 'WRONG_ANSWER'
+        failedTestCaseInfo = {
+          testCase: i + 1,
+          input: tc.input,
+          expectedOutput: tc.expectedOutput,
+          actualOutput: result.stdout.trim(),
+        }
         break
       }
     }
+
+    // Serialize failed test case info into compileError field for storage
+    const errorDetail = failedTestCaseInfo ? JSON.stringify(failedTestCaseInfo) : null
 
     // Save submission
     const submission = await prisma.submission.create({
@@ -117,6 +150,7 @@ export async function POST(req: NextRequest) {
         passedTestCases,
         totalTestCases,
         runtime: Math.round(totalRuntime / totalTestCases),
+        compileError: errorDetail,
       },
     })
 
@@ -129,6 +163,7 @@ export async function POST(req: NextRequest) {
       passedTestCases: submission.passedTestCases,
       totalTestCases: submission.totalTestCases,
       runtime: submission.runtime,
+      failedTestCase: failedTestCaseInfo,
     })
   } catch (error) {
     console.error('Error submitting code:', error)

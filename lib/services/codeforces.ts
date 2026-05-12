@@ -1,4 +1,4 @@
-export interface CodeforcesUserInfo {
+interface CodeforcesUserInfo {
   handle: string
   rating: number
   maxRating: number
@@ -10,7 +10,9 @@ export async function fetchCodeforcesStats(handle: string) {
   try {
     console.log(`Fetching Codeforces stats for handle: ${handle}`)
 
-    const res = await fetch(`https://codeforces.com/api/user.info?handles=${handle}`)
+    const res = await fetch(`https://codeforces.com/api/user.info?handles=${handle}`, {
+      signal: AbortSignal.timeout(10000),
+    })
     const data = await res.json()
 
     if (data.status !== 'OK' || !data.result?.[0]) {
@@ -20,8 +22,10 @@ export async function fetchCodeforcesStats(handle: string) {
 
     const user = data.result[0] as CodeforcesUserInfo
 
-    // Fetch solved count from submissions
-    const subRes = await fetch(`https://codeforces.com/api/user.status?handle=${handle}&from=1&count=100000`)
+    // Fetch solved count from submissions (capped at 5000 to avoid timeout)
+    const subRes = await fetch(`https://codeforces.com/api/user.status?handle=${handle}&from=1&count=5000`, {
+      signal: AbortSignal.timeout(15000),
+    })
     const subData = await subRes.json()
 
     let solvedSet = new Set<string>()
@@ -34,7 +38,9 @@ export async function fetchCodeforcesStats(handle: string) {
     }
 
     // Fetch rating history for contest count and max rating
-    const ratRes = await fetch(`https://codeforces.com/api/user.rating?handle=${handle}`)
+    const ratRes = await fetch(`https://codeforces.com/api/user.rating?handle=${handle}`, {
+      signal: AbortSignal.timeout(10000),
+    })
     const ratData = await ratRes.json()
     const contests = ratData.status === 'OK' && Array.isArray(ratData.result) ? ratData.result.length : 0
 

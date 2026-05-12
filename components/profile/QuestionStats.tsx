@@ -54,20 +54,20 @@ export default function QuestionStats({ stats, loading, userId }: QuestionStatsP
       <StatCard
         label="LC Questions"
         value={stats.leetcode}
-        color="text-violet-600"
-        bgColor="bg-violet-50 border-violet-100"
+        color="text-violet-700 dark:text-violet-300"
+        bgColor="bg-violet-50 dark:bg-violet-500/10 border-violet-200 dark:border-violet-500/20"
       />
       <StatCard
         label="CC Questions"
         value={stats.codechef}
-        color="text-emerald-600"
-        bgColor="bg-emerald-50 border-emerald-100"
+        color="text-emerald-700 dark:text-emerald-300"
+        bgColor="bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20"
       />
       <StatCard
         label="CF Questions"
         value={stats.codeforces}
-        color="text-amber-600"
-        bgColor="bg-amber-50 border-amber-100"
+        color="text-amber-700 dark:text-amber-300"
+        bgColor="bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20"
       />
 
       {/* Details button */}

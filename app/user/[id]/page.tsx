@@ -57,12 +57,12 @@ export default function PublicProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-slate-950">
+      <div className="flex min-h-screen bg-surface">
         <Sidebar />
         <main className="flex-1 flex items-center justify-center">
           <div className="animate-pulse space-y-4">
-            <div className="w-32 h-32 rounded-full bg-slate-700" />
-            <div className="w-40 h-4 bg-slate-700 rounded" />
+            <div className="w-32 h-32 rounded-full bg-skeleton" />
+            <div className="w-40 h-4 bg-skeleton rounded" />
           </div>
         </main>
       </div>
@@ -71,11 +71,11 @@ export default function PublicProfilePage() {
 
   if (error || !profile) {
     return (
-      <div className="flex min-h-screen bg-slate-950">
+      <div className="flex min-h-screen bg-surface">
         <Sidebar />
         <main className="flex-1 flex items-center justify-center px-4">
           <div className="text-center">
-            <p className="text-lg text-slate-400 mb-4">{error || 'User not found'}</p>
+            <p className="text-lg text-secondary mb-4">{error || 'User not found'}</p>
           </div>
         </main>
       </div>
@@ -83,7 +83,7 @@ export default function PublicProfilePage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-950">
+    <div className="flex min-h-screen bg-surface">
       <Sidebar />
 
       <main className="flex-1 min-w-0 overflow-y-auto">

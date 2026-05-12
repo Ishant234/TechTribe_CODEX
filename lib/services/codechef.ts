@@ -1,4 +1,4 @@
-import puppeteer from 'puppeteer'
+import * as cheerio from 'cheerio'
 
 const toNum = (t: any): number => {
   const m = String(t || '').match(/\d+/)
@@ -6,55 +6,49 @@ const toNum = (t: any): number => {
 }
 
 export async function fetchCodechefStats(handle: string) {
-  let browser
   try {
     console.log(`[CodeChef] Fetching stats for handle: ${handle}`)
 
-    browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    })
-    const page = await browser.newPage()
-
-    await page.goto(`https://www.codechef.com/users/${handle}`, {
-      waitUntil: 'networkidle2',
-      timeout: 30000,
+    const response = await fetch(`https://www.codechef.com/users/${handle}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml',
+      },
+      signal: AbortSignal.timeout(15000),
     })
 
-    // Wait for the rating number to appear (JS-rendered content)
-    await page.waitForSelector('.rating-number', { timeout: 15000 })
+    if (!response.ok) {
+      console.error(`[CodeChef] HTTP ${response.status} for ${handle}`)
+      return null
+    }
+
+    const html = await response.text()
+    const $ = cheerio.load(html)
 
     // Extract current rating
-    const ratingText = await page.$eval('.rating-number', (el: Element) =>
-      (el as HTMLElement).innerText.trim()
-    )
+    const ratingText = $('.rating-number').first().text().trim()
     const currentRating = toNum(ratingText)
     console.log(`[CodeChef] Current rating: ${currentRating}`)
 
     // Extract max rating from the small tag in .rating-header
     let maxRating = 0
     try {
-      const maxRatingText = await page.$eval('.rating-header small', (el: Element) =>
-        (el as HTMLElement).innerText.trim()
-      )
+      const maxRatingText = $('.rating-header small').first().text().trim()
       maxRating = toNum(maxRatingText)
       console.log(`[CodeChef] Max rating: ${maxRating}`)
     } catch {
       console.log(`[CodeChef] Could not extract max rating`)
     }
 
-    // Extract problems solved and contests
-    // The h3 elements in .rating-data-section.problems-solved are:
-    //   "Learning Paths (N)", "Practice Paths (N)", "Contests (N)", "Total Problems Solved: N"
+    // Extract problems solved and contests from h3 texts
     let problemsSolved = 0
     let contestsParticipated = 0
 
-    // Method 1: Extract from h3 texts by matching labels
     try {
-      const h3Texts = await page.$$eval(
-        '.rating-data-section.problems-solved h3',
-        (els: Element[]) => els.map((el: Element) => (el as HTMLElement).innerText.trim())
-      )
+      const h3Texts: string[] = []
+      $('.rating-data-section.problems-solved h3').each((_: number, el: any) => {
+        h3Texts.push($(el).text().trim())
+      })
       console.log(`[CodeChef] Found h3 texts:`, h3Texts)
 
       for (const text of h3Texts) {
@@ -70,22 +64,16 @@ export async function fetchCodechefStats(handle: string) {
       console.log(`[CodeChef] Could not extract from h3 elements: ${e}`)
     }
 
-    // Method 2: Fallback – extract contests from .contest-participated-count
+    // Fallback: extract contests from .contest-participated-count
     if (contestsParticipated === 0) {
       try {
-        const contestText = await page.$eval(
-          '.contest-participated-count',
-          (el: Element) => (el as HTMLElement).innerText.trim()
-        )
+        const contestText = $('.contest-participated-count').first().text().trim()
         contestsParticipated = toNum(contestText)
         console.log(`[CodeChef] Contests from sidebar: ${contestsParticipated}`)
       } catch {
         console.log(`[CodeChef] Could not extract contest count from sidebar`)
       }
     }
-
-    await browser.close()
-    browser = null
 
     // Validate we got at least some data
     if (currentRating === 0 && maxRating === 0 && problemsSolved === 0) {
@@ -110,10 +98,6 @@ export async function fetchCodechefStats(handle: string) {
   } catch (error) {
     console.error(`[CodeChef] Error fetching stats:`, error)
     return null
-  } finally {
-    if (browser) {
-      await browser.close()
-    }
   }
 }
 

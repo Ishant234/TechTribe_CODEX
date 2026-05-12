@@ -1,8 +1,9 @@
 import { z } from 'zod'
+import { stripHtml } from '@/lib/sanitize'
 
 export const createPostSchema = z.object({
-  title: z.string().min(1, 'Title is required').max(200),
-  content: z.string().min(1, 'Content is required'),
+  title: z.string().min(1, 'Title is required').max(200).transform(stripHtml),
+  content: z.string().min(1, 'Content is required').transform(stripHtml),
   imageUrl: z.string().refine(
     (val) => val === '' || val.startsWith('/uploads/') || /^https?:\/\//.test(val),
     { message: 'Invalid image URL' }
@@ -13,8 +14,5 @@ export const createPostSchema = z.object({
 })
 
 export const createCommentSchema = z.object({
-  content: z.string().min(1, 'Comment cannot be empty').max(1000),
+  content: z.string().min(1, 'Comment cannot be empty').max(1000).transform(stripHtml),
 })
-
-export type CreatePostInput = z.infer<typeof createPostSchema>
-export type CreateCommentInput = z.infer<typeof createCommentSchema>

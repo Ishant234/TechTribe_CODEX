@@ -2,9 +2,20 @@ import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcrypt'
 import { prisma } from '@/lib/prisma'
 import { signupSchema } from '@/lib/validators/auth'
+import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit: 5 signups per minute per IP
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+    const rl = rateLimit(`signup:${ip}`, { limit: 5, windowSeconds: 60 })
+    if (!rl.success) {
+      return NextResponse.json(
+        { message: 'Too many signup attempts. Please try again later.' },
+        { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } }
+      )
+    }
+
     const body = await request.json()
     const validation = signupSchema.safeParse(body)
 
@@ -38,7 +49,7 @@ export async function POST(request: NextRequest) {
         profile: {
           create: {
             bio: '',
-            avatarUrl: `https://picsum.photos/seed/${Date.now()}/200/200`,
+            avatarUrl: `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(name)}`,
           },
         },
       },

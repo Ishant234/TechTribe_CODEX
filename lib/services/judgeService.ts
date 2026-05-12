@@ -1,8 +1,10 @@
-import { execFile, exec } from 'child_process'
-import { writeFile, unlink, mkdir } from 'fs/promises'
-import { join } from 'path'
-import { randomUUID } from 'crypto'
-import { tmpdir } from 'os'
+/**
+ * Sandboxed code execution via Judge0 CE public API.
+ * Replaces the previous unsafe child_process-based execution.
+ *
+ * For production at scale, self-host Judge0 or use a paid plan
+ * to avoid public API rate limits.
+ */
 
 export interface ExecutionResult {
   stdout: string
@@ -10,71 +12,22 @@ export interface ExecutionResult {
   exitCode: number | null
   timedOut: boolean
   runtime: number // ms
+  compileError?: string
 }
 
 type SupportedLanguage = 'cpp' | 'python' | 'javascript'
 
-const LANGUAGE_CONFIG: Record<SupportedLanguage, {
-  extension: string
-  compile?: (src: string, out: string) => string[]
-  run: (src: string, out: string) => string[]
-}> = {
-  cpp: {
-    extension: '.cpp',
-    compile: (src, out) => ['g++', ['-std=c++17', '-O2', '-o', out, src]].flat() as any,
-    run: (_src, out) => [out],
-  },
-  python: {
-    extension: '.py',
-    run: (src) => ['python3', src],
-  },
-  javascript: {
-    extension: '.js',
-    run: (src) => ['node', src],
-  },
+// Judge0 CE language IDs
+const LANGUAGE_IDS: Record<SupportedLanguage, number> = {
+  cpp: 54,        // C++ (GCC 9.2.0)
+  python: 71,     // Python 3
+  javascript: 93, // Node.js
 }
 
-function execPromise(
-  cmd: string,
-  args: string[],
-  options: { timeout: number; input?: string }
-): Promise<{ stdout: string; stderr: string; exitCode: number | null; timedOut: boolean }> {
-  return new Promise((resolve) => {
-    const child = execFile(cmd, args, {
-      timeout: options.timeout,
-      maxBuffer: 10 * 1024 * 1024, // 10MB
-      encoding: 'utf-8',
-    }, (error, stdout, stderr) => {
-      const timedOut = error?.killed === true || (error as any)?.code === 'ERR_CHILD_PROCESS_STDIO_MAXBUFFER'
-      resolve({
-        stdout: stdout || '',
-        stderr: stderr || '',
-        exitCode: error ? (error as any).code ?? 1 : 0,
-        timedOut: !!timedOut,
-      })
-    })
-
-    // Write stdin if provided
-    if (options.input !== undefined && child.stdin) {
-      child.stdin.write(options.input)
-      child.stdin.end()
-    }
-  })
-}
-
-function compilePromise(
-  fullCmd: string,
-  timeout: number
-): Promise<{ success: boolean; stderr: string }> {
-  return new Promise((resolve) => {
-    exec(fullCmd, { timeout, maxBuffer: 5 * 1024 * 1024 }, (error, _stdout, stderr) => {
-      resolve({ success: !error, stderr: stderr || '' })
-    })
-  })
-}
+const JUDGE0_BASE = 'https://ce.judge0.com'
 
 /**
- * Compile (if needed) and execute code with given stdin.
+ * Submit code to Judge0 and wait for result.
  */
 export async function compileAndRun(
   language: string,
@@ -83,8 +36,9 @@ export async function compileAndRun(
   timeLimitMs: number = 2000
 ): Promise<ExecutionResult> {
   const lang = language.toLowerCase() as SupportedLanguage
-  const config = LANGUAGE_CONFIG[lang]
-  if (!config) {
+  const languageId = LANGUAGE_IDS[lang]
+
+  if (!languageId) {
     return {
       stdout: '',
       stderr: `Unsupported language: ${language}. Supported: cpp, python, javascript`,
@@ -94,61 +48,72 @@ export async function compileAndRun(
     }
   }
 
-  const id = randomUUID()
-  const workDir = join(tmpdir(), 'techtribe-judge', id)
-  await mkdir(workDir, { recursive: true })
-
-  const srcFile = join(workDir, `solution${config.extension}`)
-  const outFile = join(workDir, 'solution')
-
   try {
-    // Write source code
-    await writeFile(srcFile, code, 'utf-8')
+    // Submit to Judge0 with wait=true for synchronous result
+    const response = await fetch(
+      `${JUDGE0_BASE}/submissions?base64_encoded=false&wait=true`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          source_code: code,
+          language_id: languageId,
+          stdin: stdin || '',
+          cpu_time_limit: timeLimitMs / 1000, // seconds
+          memory_limit: 256000, // KB (256 MB)
+        }),
+        signal: AbortSignal.timeout(30000), // 30s overall timeout
+      }
+    )
 
-    // Compile step (C++ only)
-    if (config.compile) {
-      const compileCmd = `g++ -std=c++17 -O2 -o "${outFile}" "${srcFile}"`
-      const compileResult = await compilePromise(compileCmd, 15000)
-      if (!compileResult.success) {
-        return {
-          stdout: '',
-          stderr: compileResult.stderr,
-          exitCode: 1,
-          timedOut: false,
-          runtime: 0,
-        }
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => 'Unknown error')
+      console.error(`[Judge0] API error: ${response.status} ${errorText}`)
+      return {
+        stdout: '',
+        stderr: `Code execution service error (${response.status}). Please try again.`,
+        exitCode: 1,
+        timedOut: false,
+        runtime: 0,
       }
     }
 
-    // Run step
-    const runArgs = config.run(srcFile, outFile)
-    const cmd = runArgs[0]
-    const args = runArgs.slice(1)
+    const result = await response.json()
 
-    const start = Date.now()
-    const result = await execPromise(cmd, args, {
-      timeout: timeLimitMs + 500, // slight buffer over problem limit
-      input: stdin,
-    })
-    const runtime = Date.now() - start
+    // Judge0 status IDs:
+    // 1=In Queue, 2=Processing, 3=Accepted, 4=Wrong Answer,
+    // 5=TLE, 6=Compilation Error, 7-12=Runtime Errors
+    const statusId = result.status?.id ?? 0
+    const timedOut = statusId === 5
+    const isCompileError = statusId === 6
+    const isRuntimeError = statusId >= 7 && statusId <= 12
 
     return {
-      stdout: result.stdout,
-      stderr: result.stderr,
-      exitCode: typeof result.exitCode === 'number' ? result.exitCode : 1,
-      timedOut: result.timedOut || runtime > timeLimitMs,
-      runtime,
+      stdout: result.stdout || '',
+      stderr: result.stderr || '',
+      exitCode: statusId === 3 ? 0 : 1,
+      timedOut,
+      runtime: result.time ? Math.round(parseFloat(result.time) * 1000) : 0,
+      compileError: isCompileError ? (result.compile_output || result.stderr || 'Compilation failed') : undefined,
     }
-  } finally {
-    // Cleanup temp files
-    const cleanup = async () => {
-      try { await unlink(srcFile) } catch {}
-      try { await unlink(outFile) } catch {}
-      try {
-        const { rmdir } = await import('fs/promises')
-        await rmdir(workDir)
-      } catch {}
+  } catch (error: any) {
+    if (error?.name === 'TimeoutError' || error?.name === 'AbortError') {
+      return {
+        stdout: '',
+        stderr: 'Code execution timed out. Please try again.',
+        exitCode: 1,
+        timedOut: true,
+        runtime: timeLimitMs,
+      }
     }
-    cleanup() // fire-and-forget
+
+    console.error('[Judge0] Unexpected error:', error)
+    return {
+      stdout: '',
+      stderr: 'Code execution service unavailable. Please try again.',
+      exitCode: 1,
+      timedOut: false,
+      runtime: 0,
+    }
   }
 }

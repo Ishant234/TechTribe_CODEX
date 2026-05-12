@@ -51,9 +51,9 @@ export default function EditProfilePage() {
   })
 
   const [timeLeft, setTimeLeft] = useState({
-    CODECHEF: 120,
-    CODEFORCES: 120,
-    LEETCODE: 120,
+    CODECHEF: 600,
+    CODEFORCES: 600,
+    LEETCODE: 600,
   })
 
   const timerRefs = useRef<Record<string, NodeJS.Timeout | null>>({
@@ -118,6 +118,7 @@ export default function EditProfilePage() {
         setMessages((prev) => ({ ...prev, [platform]: data.message || 'Failed to update handle.' }))
       } else {
         setMessages((prev) => ({ ...prev, [platform]: data.message }))
+        setVerified((prev) => ({ ...prev, [platform]: false }))
       }
     } catch (error) {
       setMessages((prev) => ({ ...prev, [platform]: 'Error updating handle. Please try again.' }))
@@ -128,7 +129,7 @@ export default function EditProfilePage() {
 
   const handleVerify = async (platform: Platform) => {
     setVerifying((prev) => ({ ...prev, [platform]: true }))
-    setTimeLeft((prev) => ({ ...prev, [platform]: 120 }))
+    setTimeLeft((prev) => ({ ...prev, [platform]: 600 }))
     setMessages((prev) => ({ ...prev, [platform]: '' }))
 
     // Start countdown timer

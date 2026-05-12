@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUserId } from '@/lib/session'
 
-export const maxDuration = 150
+export const maxDuration = 600
 
 export async function POST() {
   try {
@@ -18,7 +18,7 @@ export async function POST() {
 
     const username = lcStat.handle
     const endpointHitTime = Math.floor(Date.now() / 1000)
-    const timeoutDuration = 120 * 1000
+    const timeoutDuration = 600 * 1000
     const pollInterval = 5 * 1000
     const startTime = Date.now()
 
@@ -108,7 +108,7 @@ export async function POST() {
 
     return NextResponse.json({
       success: false,
-      message: 'No valid submission found within 2 minutes',
+      message: 'No valid submission found within 10 minutes',
     })
   } catch (error) {
     console.error('LC verify error:', error)
